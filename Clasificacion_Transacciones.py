@@ -22,16 +22,14 @@ sorted_idx = np.argsort(kmeans.cluster_centers_.sum(axis=1))
 label_map = {
     sorted_idx[0]: 'muy bajo',
     sorted_idx[1]: 'bajo',
-    sorted_idx[2]: 'medio bajo',
-    sorted_idx[3]: 'medio',
-    sorted_idx[4]: 'medio alto',
-    sorted_idx[5]: 'alto'
+    sorted_idx[2]: 'medio',
+    sorted_idx[3]: 'alto'
 }
 df['clasificacion'] = df['cluster'].map(label_map)
 df.drop('cluster', axis=1, inplace=True)
 
 # 4. Visualizar la clasificación
-colors = {'muy bajo':'blue', 'bajo':'green', 'medio bajo':'red', 'medio':'magenta', 'medio alto':'cyan', 'alto':'orange'}
+colors = {'muy bajo':'blue', 'bajo':'green', 'medio':'red', 'alto':'orange'}
 plt.figure(figsize=(10, 6))
 
 # Dibuja cada punto de dato
@@ -77,7 +75,7 @@ som.train(data, 1000)
 
 # Obtener las distancias para cada punto en el SOM
 distances = np.array([som.distance_map()[som.winner(d)] for d in data])
-labels = pd.cut(distances, 6, labels=['Muy Bajo', 'Bajo', 'Medio-Bajo', 'Medio', 'Medio-Alto', 'Alto'])
+labels = pd.cut(distances, 4, labels=['Muy Bajo', 'Bajo', 'Medio', 'Alto'])
 df['clasificacion'] = labels
 
 # Visualizar el SOM
@@ -95,7 +93,7 @@ plt.title('SOM después de 1000 iteraciones')
 plt.show()
 
 # Gráfica cartesiana de 'Predios' vs 'Transacciones' coloreada por 'clasificacion'
-colors = {'Muy Bajo': 'red', 'Bajo': 'orange', 'Medio-Bajo': 'yellow', 'Medio': 'green', 'Medio-Alto': 'blue', 'Alto': 'magenta'}
+colors = {'Muy Bajo': 'red', 'Bajo': 'orange', 'Medio': 'green', 'Alto': 'magenta'}
 plt.figure(figsize=(10, 10))
 for label in df['clasificacion'].cat.categories:
     mask = df['clasificacion'] == label
@@ -119,9 +117,10 @@ df1000 = pd.read_excel(ruta, engine='openpyxl', header=0)
 ruta = "C:\\Users\\JULIAN FLOREZ\\Downloads\\Variables\\Tabla_Maestra.xlsx"
 
 df1 = pd.read_excel(ruta, engine='openpyxl', header=0)
-df2 = df1.iloc[:, :40]
+df2 = df1.iloc[:, :46]
 df2 = df2.drop(columns=['DEPARTAMENTO', 'MUNICIPIO', 'Gini_2020'])
 df3 = df2.dropna(subset=['PREDIOS__RURALES_CON_CAMBIO_DE_PROPIETARIO_2019'])
+
 
 # Para la variable dependiente
 df_predios_cambio = pd.melt(df3, id_vars=['COD_MPIO'], 
@@ -158,13 +157,21 @@ df_Perm = pd.melt(df3, id_vars=['COD_MPIO'], value_vars=['Area_Permanentes_2014'
 df_Perm['Year'] = df_Perm['Year'].str.replace("Area_Permanentes_", "")
 df_Perm['Year'] = df_Perm['Year'].astype(int)
 
+df_vict = pd.melt(df3, id_vars=['COD_MPIO'], value_vars=['Victimas_2014','Victimas_2015','Victimas_2016','Victimas_2017','Victimas_2018','Victimas_2019'], 
+                  var_name='Year', value_name='Victimas')
+df_vict['Year'] = df_vict['Year'].str.replace("Victimas_", "")
+df_vict['Year'] = df_vict['Year'].astype(int)
+
+
 df_panel = (df_gini.merge(df_Coca, on=['COD_MPIO', 'Year'])
                     .merge(df_PredRur, on=['COD_MPIO', 'Year'])
                     .merge(df_Transit, on=['COD_MPIO', 'Year'])
                     .merge(df_Perm, on=['COD_MPIO', 'Year'])
+                    .merge(df_vict, on=['COD_MPIO', 'Year'])
                     .merge(df_predios_cambio, on=['COD_MPIO', 'Year']))
 
 df_panel = df_panel.sort_values(by=['COD_MPIO', 'Year'])
+df_panel['Victimas'] = df_panel['Victimas'].fillna(0)
 
 #Análisis descriptivo básico
 print(df_panel[['Gini', 'Coca', 'PRurales', 'Transitorios', 'Permanentes', 'Predios_Cambio']].describe())
@@ -182,7 +189,7 @@ df_panel.groupby('Year')['Coca'].mean().plot(label='Coca', linestyle='--')
 df_panel.groupby('Year')['PRurales'].mean().plot(label='PRurales', linestyle='--')
 df_panel.groupby('Year')['Transitorios'].mean().plot(label='Transitorios', linestyle='--')
 df_panel.groupby('Year')['Permanentes'].mean().plot(label='Permanentes', linestyle='--')
-
+df_panel.groupby('Year')['Victimas'].mean().plot(label='Victimas', linestyle='--')
 plt.legend()
 plt.title('Tendencia de variables a lo largo del tiempo')
 plt.show()
@@ -198,17 +205,17 @@ df_panel['Coca'].hist(bins=30, alpha=0.5, label='Coca')
 df_panel['PRurales'].hist(bins=30, alpha=0.5, label='PRurales')
 df_panel['Transitorios'].hist(bins=30, alpha=0.5, label='Transitorios')
 df_panel['Permanentes'].hist(bins=30, alpha=0.5, label='Permanentes')
-
+df_panel['Victimas'].hist(bins=30, alpha=0.5, label='Victimas')
 plt.legend()
 plt.title('Distribución de variables')
 plt.show()
 
 #Correlaciones:
-correlations = df_panel[['Predios_Cambio', 'Gini', 'Coca', 'PRurales', 'Transitorios', 'Permanentes']].corr()
+correlations = df_panel[['Predios_Cambio', 'Gini', 'Coca', 'PRurales', 'Transitorios', 'Permanentes', 'Victimas']].corr()
 print(correlations)
 
 #Analizar valores perdidos
-missing_data = df_panel[['Predios_Cambio', 'Gini', 'Coca', 'PRurales', 'Transitorios', 'Permanentes']].isnull().sum()
+missing_data = df_panel[['Predios_Cambio', 'Gini', 'Coca', 'PRurales', 'Transitorios', 'Permanentes', 'Victimas']].isnull().sum()
 print(missing_data)
 
 #Modelo de datos de panel
@@ -218,17 +225,17 @@ from linearmodels.panel import PanelOLS
 df_panel = df_panel.set_index(['COD_MPIO', 'Year'])
 
 # Modelo de efectos fijos
-formula = 'Predios_Cambio ~ 1 + Gini + Coca + PRurales + Transitorios + Permanentes + EntityEffects'
+formula = 'Predios_Cambio ~ 1 + Gini + Coca + PRurales + Transitorios + Permanentes + Victimas + EntityEffects'
 model = PanelOLS.from_formula(formula, data=df_panel)
 results = model.fit()
 print(results)
 
-formula = 'Predios_Cambio ~ 1 + Gini + PRurales + Permanentes + EntityEffects'
+formula = 'Predios_Cambio ~ 1 + Gini + PRurales + Permanentes + Victimas + EntityEffects'
 model = PanelOLS.from_formula(formula, data=df_panel)
 results = model.fit()
 print(results)
 
-formula = 'Predios_Cambio ~ 1 + Gini + PRurales + EntityEffects'
+formula = 'Predios_Cambio ~ 1 + Gini + PRurales + Victimas + EntityEffects'
 model = PanelOLS.from_formula(formula, data=df_panel)
 results = model.fit()
 print(results)
@@ -240,7 +247,7 @@ from statsmodels.regression.mixed_linear_model import MixedLM
 # Preparación de los datos
 df_panel = df_panel.reset_index()
 dependent = df_panel['Predios_Cambio']
-independent = df_panel[['Gini', 'Coca', 'PRurales', 'Transitorios', 'Permanentes']]
+independent = df_panel[['Gini', 'Coca', 'PRurales', 'Transitorios', 'Permanentes', 'Victimas']]
 independent = sm.add_constant(independent)  # Añadir constante
 
 # Modelo
@@ -260,12 +267,12 @@ from scipy import stats
 df_panel = df_panel.set_index(['COD_MPIO', 'Year'])
 
 # Efectos Fijos
-formula_fe = 'Predios_Cambio ~ 1 + Gini + Coca + PRurales + Transitorios + Permanentes + EntityEffects'
+formula_fe = 'Predios_Cambio ~ 1 + Gini + Coca + PRurales + Transitorios + Permanentes + Victimas + EntityEffects'
 model_fe = PanelOLS.from_formula(formula_fe, data=df_panel)
 results_fe = model_fe.fit()
 
 # Efectos Aleatorios
-formula_re = 'Predios_Cambio ~ 1 + Gini + Coca + PRurales + Transitorios + Permanentes'
+formula_re = 'Predios_Cambio ~ 1 + Gini + Coca + PRurales + Transitorios + Permanentes + Victimas'
 model_re = RandomEffects.from_formula(formula_re, data=df_panel)
 results_re = model_re.fit()
 
@@ -289,16 +296,17 @@ if p_value < 0.05:
 else:
     print("La prueba de Hausman no es significativa: prefiera el modelo de efectos aleatorios.")
 
+##################################################################################################
 #Modelo para el año 2019 sin serie de tiempo
 
 # Definimos las columnas que queremos seleccionar
-column_indices = [0, 8, 15, 21, 27, 33, 41, 43, 46, 47, 48, 49, 50, 51, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 70, 72, 73, 39]
+column_indices = [0, 8, 15, 21, 27, 33, 39, 45, 47, 49, 50, 51, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 70, 72, 73, 39]
 
 # Tomamos estas columnas del dataframe df1
 df100 = df1.iloc[:, column_indices]
 
 # Eliminar las columnas especificadas del dataframe df100
-df101 = df100.drop(columns=["Categoría_de_ruralidad", "Entorno_del_desarrollo", "COD_MPIO"])
+df101 = df100.drop(columns=["Categoría_de_ruralidad", "Categoría_de_municipio_2022", "Sub_región", "COD_MPIO"])
 
 # Eliminar las filas con valores nan en la columna especificada
 df101 = df101.dropna(subset=["PREDIOS__RURALES_CON_CAMBIO_DE_PROPIETARIO_2019"])
