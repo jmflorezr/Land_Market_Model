@@ -52,7 +52,7 @@ df.to_excel(path_to_save, index=False)
 ######################SOM
 import numpy as np
 import pandas as pd
-from minisom import MiniSom
+from minisom import MiniSom 
 import matplotlib.pyplot as plt
 
 # Suponiendo que df es tu DataFrame
@@ -109,6 +109,18 @@ plt.show()
 
 ruta = "C:\\Users\\JULIAN FLOREZ\\Downloads\\Variables\\Precio_Merc_Final_V2.xlsx"
 df1000 = pd.read_excel(ruta, engine='openpyxl', header=0)
+# Lista de columnas a borrar
+cols_to_drop_indices = [0, 1, 3, 5, 9, 10, 11, 22, 23, 24, 27, 28, 29, 30, 37, 38, 39, 41, 45]
+
+# Obtener los nombres de las columnas a partir de los índices
+cols_to_drop = df1000.columns[cols_to_drop_indices]
+
+# Borramos las columnas basadas en sus nombres
+df1001 = df1000.drop(columns=cols_to_drop)
+
+class_count = df1001["rango_precios"].value_counts()
+class_count
+
 ###############Panel data
 
 # 1. Leer el archivo de Excel tabla Maestra
@@ -238,15 +250,12 @@ model = PanelOLS.from_formula(formula, data=df_panel)
 results = model.fit()
 print(results)
 
-formula = 'Predios_Cambio ~ 1 + Gini + PRurales + Permanentes + Victimas + PoblRural + EntityEffects'
+formula = 'Predios_Cambio ~ 1 + Gini + PRurales + Victimas + EntityEffects'
 model = PanelOLS.from_formula(formula, data=df_panel)
 results = model.fit()
 print(results)
 
-formula = 'Predios_Cambio ~ 1 + Gini + PRurales + Victimas + PoblRural + EntityEffects'
-model = PanelOLS.from_formula(formula, data=df_panel)
-results = model.fit()
-print(results)
+##Modelo Inicial, Revivar R\
 
 #Modelo de efectos aleatorios
 import statsmodels.api as sm
