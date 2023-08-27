@@ -257,17 +257,3 @@ ax.set_xticklabels(clase_precios_v_millions, rotation=45, ha="right")
 ax.legend()
 
 plt.show()
-
-
-
-# Exportar tabla para ArcMap
-
-dfPx_2023_ArcGIS = dfPx_2023[['OBJECTID', 'cod_dane_mpio', 'rango_precios_v']].copy()
-
-dfPx_2023_ArcGIS['cod_dane_mpio'] = dfPx_2023_ArcGIS['cod_dane_mpio'].apply(lambda x: str(x).zfill(5))
-
-ruta_archivo_excel = 'C:\\Users\\User\\OneDrive - JEP Colombia\\UPRA\\1 Agosto\\Tierras\\Precios2023.xlsx'
-
-dfPx_2023_ArcGIS.to_excel(ruta_archivo_excel, index=False)
-
-print("Archivo Excel exportado correctamente.")
