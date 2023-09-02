@@ -6,15 +6,13 @@ Created on Thu Aug 31 21:18:09 2023
 """
 
 # Importar librerías
-
 import pandas as pd
 
 # Importar tabla de precios completa
-file_path = r"C:\Users\User\OneDrive - Unidad de Planificación Rural Agropecuaria - UPRA\1 Agosto\Modelos\Precio_Merc_Final.txt"
+file_path = r"C:\\Users\\User\\OneDrive - Unidad de Planificación Rural Agropecuaria - UPRA\\1 Agosto\\Modelos\\Precio_Merc_Final.txt"
 
 
 # Cargar el archivo validando las diferentes codificaciones con el separador ;
-
 encodings = ['utf-8', 'ISO-8859-1', 'cp1252']
 
 for encoding in encodings:
@@ -34,3 +32,7 @@ print(info_dfPx)
 # Identificar rangos de precios
 rangos_px = dfPx.groupby(['cod_precios', 'rango_precios']).size().reset_index(name='count')
 print(rangos_px)
+
+# Exportar tabla de rangos de precios
+path_to_save = "C:\\Users\\User\\OneDrive - Unidad de Planificación Rural Agropecuaria - UPRA\\1 Agosto\\Modelos\\Rangos_Precios.xlsx"
+rangos_px.to_excel(path_to_save, index=False)
