@@ -8,37 +8,29 @@ Created on Tue Aug 29 18:17:59 2023
 import pandas as pd
 
 # Importar listado de actualización del POT
-
-# Ruta del archivo Excel y nombre de la hoja
-ruta_POT = "C:\\Users\\JULIAN\\Downloads\\Variables\\Base maestra POT Colombia-Corte 31-07-2023_Para el DNP (1).xlsx"
+ruta_POT= "C:\\Users\\User\\OneDrive - Unidad de Planificación Rural Agropecuaria - UPRA\\1 Agosto\\Modelos\\Base maestra POT Colombia-Corte 31-07-2023_Para el DNP.xlsx"
 hoja_POT = 'Hoja1'
+dfPOT = pd.read_excel(ruta_POT, sheet_name=hoja_POT)
+print(dfPOT.head())
 
 # Leer el archivo Excel con la primera columna como texto
 dfPOT = pd.read_excel(ruta_POT, sheet_name=hoja_POT, dtype={"COD MUNIC LLAVE": str})
 
-
 # Convierte la columna "FECHA" al formato datetime y crea la variable Año
-
 dfPOT['FECHA'] = pd.to_datetime(dfPOT['FECHA'], errors='coerce')
-
 dfPOT['AÑO'] = dfPOT['FECHA'].dt.year
-
 dfPOT['AÑO'].fillna('', inplace=True)
 
 # Conteo
-
 AÑOS_POT = dfPOT.groupby(['AÑO']).size().reset_index(name='count_anios_pot')
 
 # Identificar si hay municipios repetidos
-
 duplicated_counts = dfPOT['COD MUNIC LLAVE'].duplicated(keep=False)
 duplicated_data = dfPOT[duplicated_counts]
 value_counts = duplicated_data['COD MUNIC LLAVE'].value_counts()
 
-
 # Obtener los codigos de municipio únicos
 unique_cod_mun = dfPOT["COD MUNIC LLAVE"].unique()
-
 
 # Crear nuevo df para las variables DUMMY que indican si se ha actualizado el POT
 
@@ -65,10 +57,7 @@ DUMMY_POT = pd.DataFrame(data)
 
 print(DUMMY_POT)
 
-
-
 # Actualizar el df DUMMY POT con las columnas AÑO y ESTADO
-
 DUMMY_POT = DUMMY_POT.merge(dfPOT[['COD MUNIC LLAVE', 'AÑO', 'ESTADO']],
                              how='left', left_on='COD MUN', right_on='COD MUNIC LLAVE')
 
@@ -121,5 +110,3 @@ for column in year_columns:
     # Cambiar los valores que son mayores a 1 a 1
     condition_greater_one = DUMMY_POT[column] > 1
     DUMMY_POT.loc[condition_greater_one, column] = 1
-
-
