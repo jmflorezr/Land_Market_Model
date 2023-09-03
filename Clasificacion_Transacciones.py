@@ -190,14 +190,14 @@ df.to_excel(path_to_save, index=False)
 
 # 1. Leer el archivo de Excel tabla Maestra
 # Ruta del archivo
-ruta = "C:\\Users\\JULIAN FLOREZ\\Downloads\\Variables\\Tabla_Maestra.xlsx"
+ruta = "C:\\Users\\User\\OneDrive - Unidad de Planificación Rural Agropecuaria - UPRA\\1 Agosto\\Modelos\\Tabla_Maestra.xlsx"
 
 df1 = pd.read_excel(ruta, engine='openpyxl', header=0)
 # Eliminar los registros donde la columna "Categoria" sea igual a "Ciudades y aglomeraciones"
 #df1 = df1[df1['CategorIa_de_ruralidad'] != 'Ciudades y aglomeraciones']
 
 
-df2 = df1.iloc[:, :106]
+df2 = df1.iloc[:, :112]
 df2 = df2.drop(columns=['DEPARTAMENTO', 'MUNICIPIO', 'Gini_2020'])
 df3 = df2.dropna(subset=['PREDIOS__RURALES_CON_CAMBIO_DE_PROPIETARIO_2019'])
 
@@ -243,6 +243,13 @@ df_vict = pd.melt(df3, id_vars=['COD_MPIO'], value_vars=['Victimas_2014','Victim
                   var_name='Year', value_name='Victimas')
 df_vict['Year'] = df_vict['Year'].str.replace("Victimas_", "")
 df_vict['Year'] = df_vict['Year'].astype(int)
+
+
+df_IRV = pd.melt(df3, id_vars=['COD_MPIO'], value_vars=['IRV_2014','IRV_2015','IRV_2016','IRV_2017','IRV_2018','IRV_2019'], 
+                  var_name='Year', value_name='IRV')
+df_IRV['Year'] = df_IRV['Year'].str.replace("IRV_", "")
+df_IRV['Year'] = df_IRV['Year'].astype(int)
+
 
 df_poblrur = pd.melt(df3, id_vars=['COD_MPIO'], value_vars=['POBLACION_CP_Y_RURAL_DISP_2014','POBLACION_CP_Y_RURAL_DISP_2015','POBLACION_CP_Y_RURAL_DISP_2016','POBLACION_CP_Y_RURAL_DISP_2017','POBLACION_CP_Y_RURAL_DISP_2018','POBLACION_CP_Y_RURAL_DISP_2019'], 
                   var_name='Year', value_name='PoblRural')
@@ -296,14 +303,12 @@ df_CTransi['Year'] = df_CTransi['Year'].str.replace("CTransi", "")
 df_CTransi['Year'] = df_CTransi['Year'].astype(int)
 
 
-
-
-
 df_panel = (df_gini.merge(df_Coca, on=['COD_MPIO', 'Year'])
                     .merge(df_PredRur, on=['COD_MPIO', 'Year'])
                     .merge(df_Transit, on=['COD_MPIO', 'Year'])
                     .merge(df_Perm, on=['COD_MPIO', 'Year'])
                     .merge(df_vict, on=['COD_MPIO', 'Year'])
+                    .merge(df_IRV, on=['COD_MPIO', 'Year'])
                     .merge(df_poblrur, on=['COD_MPIO', 'Year'])
                     .merge(df_act_primaria, on=['COD_MPIO', 'Year'])
                     .merge(df_act_secundaria, on=['COD_MPIO', 'Year'])
@@ -314,18 +319,21 @@ df_panel = (df_gini.merge(df_Coca, on=['COD_MPIO', 'Year'])
                     .merge(df_PoblCabecera, on=['COD_MPIO', 'Year'])
                     .merge(df_CPerm, on=['COD_MPIO', 'Year'])
                     .merge(df_CTransi, on=['COD_MPIO', 'Year'])
-                    .merge(df_predios_cambio, on=['COD_MPIO', 'Year']))
+                    .merge(df_predios_cambio, on=['COD_MPIO', 'Year'])
+                    )
 
 
 
 df_panel = df_panel.sort_values(by=['COD_MPIO', 'Year'])
 df_panel['Victimas'] = df_panel['Victimas'].fillna(0)
+df_panel['IRV'] = df_panel['IRV'].fillna(0)
 df_panel['CTransi'] = df_panel['CTransi'].fillna(0)
 df_panel['CPerm'] = df_panel['CPerm'].fillna(0)
 df_panel['Transitorios'] = df_panel['Transitorios'].fillna(0)
 
+
 #Análisis descriptivo básico
-print(df_panel[['Gini', 'Coca', 'PRurales', 'Transitorios', 'Permanentes', 'Victimas', 'PoblRural', 'act_primaria', 'act_secundaria', 'act_terciaria', 'agregado', 'par_agreg', 'pot', 'PoblCabecera', 'CPerm', 'CTransi', 'Predios_Cambio']].describe())
+print(df_panel[['Gini', 'Coca', 'PRurales', 'Transitorios', 'Permanentes', 'Victimas', 'IRV', 'PoblRural', 'act_primaria', 'act_secundaria', 'act_terciaria', 'agregado', 'par_agreg', 'pot', 'PoblCabecera', 'CPerm', 'CTransi', 'Predios_Cambio']].describe())
 
 
 #Visualizar tendencias a lo largo del tiempo:
@@ -341,6 +349,7 @@ df_panel.groupby('Year')['PRurales'].mean().plot(label='PRurales', linestyle='--
 df_panel.groupby('Year')['Transitorios'].mean().plot(label='Transitorios', linestyle='--')
 df_panel.groupby('Year')['Permanentes'].mean().plot(label='Permanentes', linestyle='--')
 df_panel.groupby('Year')['Victimas'].mean().plot(label='Victimas', linestyle='--')
+df_panel.groupby('Year')['IRV'].mean().plot(label='IRV', linestyle='--')
 df_panel.groupby('Year')['PoblRural'].mean().plot(label='PoblRural', linestyle='--')
 df_panel.groupby('Year')['act_primaria'].mean().plot(label='act_primaria', linestyle='--')
 df_panel.groupby('Year')['act_secundaria'].mean().plot(label='act_secundaria', linestyle='--')
@@ -368,6 +377,7 @@ df_panel['PRurales'].hist(bins=30, alpha=0.5, label='PRurales')
 df_panel['Transitorios'].hist(bins=30, alpha=0.5, label='Transitorios')
 df_panel['Permanentes'].hist(bins=30, alpha=0.5, label='Permanentes')
 df_panel['Victimas'].hist(bins=30, alpha=0.5, label='Victimas')
+df_panel['IRV'].hist(bins=30, alpha=0.5, label='IRV')
 df_panel['PoblRural'].hist(bins=30, alpha=0.5, label='PoblRural')
 df_panel['act_primaria'].hist(bins=30, alpha=0.5, label='act_primaria')
 df_panel['act_secundaria'].hist(bins=30, alpha=0.5, label='act_secundaria')
@@ -380,11 +390,11 @@ plt.title('Distribución de variables')
 plt.show()
 
 #Correlaciones:
-correlations = df_panel[['Predios_Cambio', 'Gini', 'Coca', 'PRurales', 'Transitorios', 'Permanentes', 'Victimas', 'PoblRural', 'act_primaria', 'act_secundaria', 'act_terciaria', 'agregado', 'par_agreg', 'pot', 'PoblCabecera', 'CPerm', 'CTransi']].corr()
+correlations = df_panel[['Predios_Cambio', 'Gini', 'Coca', 'PRurales', 'Transitorios', 'Permanentes', 'Victimas', 'IRV', 'PoblRural', 'act_primaria', 'act_secundaria', 'act_terciaria', 'agregado', 'par_agreg', 'pot', 'PoblCabecera', 'CPerm', 'CTransi']].corr()
 print(correlations)
 
 #Analizar valores perdidos
-missing_data = df_panel[['Predios_Cambio', 'Gini', 'Coca', 'PRurales', 'Transitorios', 'Permanentes', 'Victimas', 'PoblRural', 'act_primaria', 'act_secundaria', 'act_terciaria', 'agregado', 'par_agreg', 'pot', 'PoblCabecera', 'CPerm', 'CTransi']].isnull().sum()
+missing_data = df_panel[['Predios_Cambio', 'Gini', 'Coca', 'PRurales', 'Transitorios', 'Permanentes', 'Victimas', 'IRV', 'PoblRural', 'act_primaria', 'act_secundaria', 'act_terciaria', 'agregado', 'par_agreg', 'pot', 'PoblCabecera', 'CPerm', 'CTransi']].isnull().sum()
 print(missing_data)
 
 #Modelo de datos de panel
@@ -394,12 +404,12 @@ from linearmodels.panel import PanelOLS
 df_panel = df_panel.set_index(['COD_MPIO', 'Year'])
 
 # Modelo de efectos fijos
-formula = 'Predios_Cambio ~ 1 + Gini + Coca + PRurales + Transitorios + Permanentes + Victimas + PoblRural + act_primaria + act_secundaria + act_terciaria + par_agreg + pot + PoblCabecera + CPerm + CTransi + EntityEffects'
+formula = 'Predios_Cambio ~ 1 + Gini + Coca + PRurales + Transitorios + Permanentes + Victimas + IRV + PoblRural + act_primaria + act_secundaria + act_terciaria + par_agreg + pot + PoblCabecera + CPerm + CTransi + EntityEffects'
 model = PanelOLS.from_formula(formula, data=df_panel)
 results = model.fit()
 print(results)
 
-formula = 'Predios_Cambio ~ 1 + Gini + PRurales + Victimas + act_secundaria + act_terciaria + pot + PoblCabecera + EntityEffects'
+formula = 'Predios_Cambio ~ 1 + Gini + PRurales + Victimas + IRV + act_secundaria + act_terciaria + pot + PoblCabecera + EntityEffects'
 model = PanelOLS.from_formula(formula, data=df_panel)
 results = model.fit()
 print(results)
@@ -414,7 +424,7 @@ from statsmodels.regression.mixed_linear_model import MixedLM
 # Preparación de los datos
 df_panel = df_panel.reset_index() #Mirar cuando reset los indices- generar de nuevo el dataframe
 dependent = df_panel['Predios_Cambio']
-independent = df_panel[['Gini', 'PRurales', 'Victimas', 'PoblCabecera']]
+independent = df_panel[['Gini', 'PRurales', 'Victimas', 'IRV', 'PoblCabecera']]
 independent = sm.add_constant(independent)
 df_panel.reset_index(drop=False, inplace=True)
 
@@ -439,12 +449,12 @@ from scipy import stats
 df_panel = df_panel.set_index(['COD_MPIO', 'Year'])
 
 # Efectos Fijos
-formula_fe = 'Predios_Cambio ~ 1 + Gini + Coca + PRurales + Transitorios + Permanentes + Victimas + EntityEffects'
+formula_fe = 'Predios_Cambio ~ 1 + Gini + Coca + PRurales + Transitorios + Permanentes + Victimas + IRV + EntityEffects'
 model_fe = PanelOLS.from_formula(formula_fe, data=df_panel)
 results_fe = model_fe.fit()
 
 # Efectos Aleatorios
-formula_re = 'Predios_Cambio ~ 1 + Gini + Coca + PRurales + Transitorios + Permanentes + Victimas'
+formula_re = 'Predios_Cambio ~ 1 + Gini + Coca + PRurales + Transitorios + Permanentes + Victimas + IRV'
 model_re = RandomEffects.from_formula(formula_re, data=df_panel)
 results_re = model_re.fit()
 
@@ -471,11 +481,20 @@ else:
 ##################################################################################################
 #Modelo para el año 2016 sin serie de tiempo
 
+
+
+
 # Definimos las columnas que queremos seleccionar
+
+# Obtener el índice
+
+columnas_df1 = df1.columns
+print(columnas_df1)
+
 column_indices = [
-    5, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 96, 106, 
+    5, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 96, 102, 108, 
     113, 114, 115, 116, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 
-    131, 132, 133, 134, 135, 139, 102
+    131, 132, 133, 134, 135, 139
 ]
 
 
