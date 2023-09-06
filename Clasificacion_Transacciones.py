@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Wed Sep  6 08:18:24 2023
+
+@author: JULIAN FLOREZ
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Thu Aug 10 17:53:08 2023
 @author: JULIAN FLOREZ
 """
@@ -125,78 +132,87 @@ df.to_excel(path_to_save, index=False)
 class_df = pd.pivot_table(df, values='Transacciones', index='clasificacion',
                           columns='Categoria', aggfunc='max')
 
+# Renombrar las columnas
+new_column_names = {
+    1 : 'Intermedio',
+    2 : 'Rural disperso',
+    3 : 'Rural'
+}
+
+class_df.rename(columns=new_column_names, inplace=True)
+
 ######################SOM
-import numpy as np
-import pandas as pd
-from minisom import MiniSom 
-import matplotlib.pyplot as plt
+# import numpy as np
+# import pandas as pd
+# from minisom import MiniSom 
+# import matplotlib.pyplot as plt
 
-# # df es tu DataFrame
-# df['Categoria'].replace({
-#     'Ciudades y aglomeraciones': 0,
-#     'Intermedio': 1,
-#     'Rural disperso': 2,
-#     'Rural': 3
-# }, inplace=True)
-# Realizado en las lineas anteriores
+# # # df es tu DataFrame
+# # df['Categoria'].replace({
+# #     'Ciudades y aglomeraciones': 0,
+# #     'Intermedio': 1,
+# #     'Rural disperso': 2,
+# #     'Rural': 3
+# # }, inplace=True)
+# # Realizado en las lineas anteriores
 
-# Asegurándonos de que la columna "Categoria" es de tipo categórico
-df['Categoria'] = df['Categoria'].astype('category')
+# # Asegurándonos de que la columna "Categoria" es de tipo categórico
+# df['Categoria'] = df['Categoria'].astype('category')
 
-data = df[['Predios', 'Transacciones', 'Categoria']].values
+# data = df[['Predios', 'Transacciones', 'Categoria']].values
 
-# Crear y entrenar el SOM
-som = MiniSom(7, 7, 3, sigma=1.0, learning_rate=0.8)
-som.train(data, 5000)
+# # Crear y entrenar el SOM
+# som = MiniSom(7, 7, 3, sigma=1.0, learning_rate=0.8)
+# som.train(data, 5000)
 
-# Obtener las distancias para cada punto en el SOM
-distances = np.array([som.distance_map()[som.winner(d)] for d in data])
-labels = pd.cut(distances, 6, labels=['muy bajo', 'bajo', 'medio bajo', 'medio', 'medio alto','alto'])
-df['clasificacion'] = labels
+# # Obtener las distancias para cada punto en el SOM
+# distances = np.array([som.distance_map()[som.winner(d)] for d in data])
+# labels = pd.cut(distances, 6, labels=['muy bajo', 'bajo', 'medio bajo', 'medio', 'medio alto','alto'])
+# df['clasificacion'] = labels
 
-# Visualizar el SOM
-weights = som.get_weights()
+# # Visualizar el SOM
+# weights = som.get_weights()
 
-# Normalizar los pesos a [0,1]
-normalized_weights = (weights - weights.min()) / (weights.max() - weights.min())
+# # Normalizar los pesos a [0,1]
+# normalized_weights = (weights - weights.min()) / (weights.max() - weights.min())
 
-plt.figure(figsize=(10, 10))
-for i in range(normalized_weights.shape[0]):
-    for j in range(normalized_weights.shape[1]):
-        plt.plot(i, j, 'o', markerfacecolor=normalized_weights[i, j, :], markersize=10)
+# plt.figure(figsize=(10, 10))
+# for i in range(normalized_weights.shape[0]):
+#     for j in range(normalized_weights.shape[1]):
+#         plt.plot(i, j, 'o', markerfacecolor=normalized_weights[i, j, :], markersize=10)
 
-plt.title('SOM después de 5000 iteraciones')
-plt.show()
+# plt.title('SOM después de 5000 iteraciones')
+# plt.show()
 
-# Gráfica cartesiana de 'Predios' vs 'Transacciones' coloreada por 'clasificacion'
-colors = {'muy bajo':'blue', 'bajo':'green', 'medio bajo':'magenta', 'medio':'red', 'medio alto':'cyan', 'alto':'orange'}
-plt.figure(figsize=(10, 10))
-for label in df['clasificacion'].cat.categories:
-    mask = df['clasificacion'] == label
-    plt.scatter(df['Predios'][mask], df['Transacciones'][mask], c=colors[label], label=label)
+# # Gráfica cartesiana de 'Predios' vs 'Transacciones' coloreada por 'clasificacion'
+# colors = {'muy bajo':'blue', 'bajo':'green', 'medio bajo':'magenta', 'medio':'red', 'medio alto':'cyan', 'alto':'orange'}
+# plt.figure(figsize=(10, 10))
+# for label in df['clasificacion'].cat.categories:
+#     mask = df['clasificacion'] == label
+#     plt.scatter(df['Predios'][mask], df['Transacciones'][mask], c=colors[label], label=label)
 
-plt.xlabel('Predios')
-plt.ylabel('Transacciones')
-plt.title('Gráfica de Predios vs Transacciones y segementada por clasificación ruralidad coloreada por clasificación')
-plt.legend()
-plt.show()
+# plt.xlabel('Predios')
+# plt.ylabel('Transacciones')
+# plt.title('Gráfica de Predios vs Transacciones y segementada por clasificación ruralidad coloreada por clasificación')
+# plt.legend()
+# plt.show()
 
-# Exportar los resultados a un nuevo archivo de Excel
-path_to_save = "C:\\Users\\JULIAN FLOREZ\\Downloads\\Variables\\Resultados_Transacciones_SOM.xlsx"
-df.to_excel(path_to_save, index=False)
+# # Exportar los resultados a un nuevo archivo de Excel
+# path_to_save = "C:\\Users\\JULIAN FLOREZ\\Downloads\\Variables\\Resultados_Transacciones_SOM.xlsx"
+# df.to_excel(path_to_save, index=False)
 
 
 ###############Panel data
 
 # 1. Leer el archivo de Excel tabla Maestra
 # Ruta del archivo
-ruta = "C:\\Users\\User\\OneDrive - Unidad de Planificación Rural Agropecuaria - UPRA\\1 Agosto\\Modelos\\Tabla_Maestra.xlsx"
+ruta = "C:\\Users\\JULIAN FLOREZ\\Downloads\\Variables\\Tabla_Maestra.xlsx"
 
 df1 = pd.read_excel(ruta, engine='openpyxl', header=0)
 # Eliminar los registros donde la columna "Categoria" sea igual a "Ciudades y aglomeraciones"
-#df1 = df1[df1['CategorIa_de_ruralidad'] != 'Ciudades y aglomeraciones']
-
-
+#df11 = df1[df1['CategorIa_de_ruralidad'] != 'Ciudades y aglomeraciones']
+#df11 = df1[df1['Categoria_de_ruralidad'] != 'Ciudades y aglomeraciones']
+# Ojo, al eliminar datos de Ciudades reduce la capacidad de explicacion del modelo
 df2 = df1.iloc[:, :112]
 df2 = df2.drop(columns=['DEPARTAMENTO', 'MUNICIPIO', 'Gini_2020'])
 df3 = df2.dropna(subset=['PREDIOS__RURALES_CON_CAMBIO_DE_PROPIETARIO_2019'])
@@ -409,12 +425,12 @@ model = PanelOLS.from_formula(formula, data=df_panel)
 results = model.fit()
 print(results)
 
-formula = 'Predios_Cambio ~ 1 + Gini + PRurales + Victimas + IRV + act_secundaria + act_terciaria + pot + PoblCabecera + EntityEffects'
+formula = 'Predios_Cambio ~ 1 + Gini + PRurales + IRV + act_secundaria + act_terciaria + pot + PoblCabecera + EntityEffects'
 model = PanelOLS.from_formula(formula, data=df_panel)
 results = model.fit()
 print(results)
 ###############################
-##Modelo Inicial, Revivar R2 0.1611
+##Modelo Inicial, Revivar R2 0.1621
 ###############################
 
 #Modelo de efectos aleatorios
@@ -424,13 +440,10 @@ from statsmodels.regression.mixed_linear_model import MixedLM
 # Preparación de los datos
 df_panel = df_panel.reset_index() #Mirar cuando reset los indices- generar de nuevo el dataframe
 dependent = df_panel['Predios_Cambio']
-independent = df_panel[['Gini', 'PRurales', 'Victimas', 'IRV', 'PoblCabecera']]
+independent = df_panel[['Gini', 'PRurales', 'PoblCabecera']]
 independent = sm.add_constant(independent)
 df_panel.reset_index(drop=False, inplace=True)
 
-
-
-  
 
 # Modelo
 model_re = MixedLM(dependent, independent, groups=df_panel['COD_MPIO'])
@@ -449,12 +462,12 @@ from scipy import stats
 df_panel = df_panel.set_index(['COD_MPIO', 'Year'])
 
 # Efectos Fijos
-formula_fe = 'Predios_Cambio ~ 1 + Gini + Coca + PRurales + Transitorios + Permanentes + Victimas + IRV + EntityEffects'
+formula_fe = 'Predios_Cambio ~ 1 + Gini + PRurales + IRV + act_secundaria + act_terciaria + pot + PoblCabecera + EntityEffects'
 model_fe = PanelOLS.from_formula(formula_fe, data=df_panel)
 results_fe = model_fe.fit()
 
 # Efectos Aleatorios
-formula_re = 'Predios_Cambio ~ 1 + Gini + Coca + PRurales + Transitorios + Permanentes + Victimas + IRV'
+formula_re = 'Predios_Cambio ~ 1 + Gini + PRurales + IRV + act_secundaria + act_terciaria + pot + PoblCabecera'
 model_re = RandomEffects.from_formula(formula_re, data=df_panel)
 results_re = model_re.fit()
 
@@ -480,21 +493,16 @@ else:
 
 ##################################################################################################
 #Modelo para el año 2016 sin serie de tiempo
-
-
-
-
 # Definimos las columnas que queremos seleccionar
-
 # Obtener el índice
 
 columnas_df1 = df1.columns
 print(columnas_df1)
 
 column_indices = [
-    5, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72, 78, 84, 90, 96, 102, 108, 
-    113, 114, 115, 116, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 
-    131, 132, 133, 134, 135, 139
+    5, 12, 18, 24, 30, 36, 48, 54, 60, 66, 72, 78, 84, 90, 96, 102,  
+    112, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 
+    131, 132, 133, 134, 135, 139, 108
 ]
 
 
@@ -507,6 +515,11 @@ df100 = df1.iloc[:, column_indices]
 df101 = df100
 # Eliminar las filas con valores nan en la columna especificada
 df101 = df101.dropna(subset=["PREDIOS__RURALES_CON_CAMBIO_DE_PROPIETARIO_2016"])
+df101 = df101.dropna(subset=["Area_Transitorios_2016"])
+#df101 = df101.dropna(subset=["IRV_2016"])
+df101 = df101.dropna(subset=["CPerm%2016"])
+df101 = df101.dropna(subset=["CTransi2016"])
+df101 = df101.dropna(subset=["Indice_de_rendimiento_PromNal_MáxNal"])
 
 #Matrix de correlacion 
 import pandas as pd
@@ -541,12 +554,12 @@ X = sm.add_constant(X)
 # Ajustar el modelo
 model = sm.OLS(Y, X).fit()
 
-# Mostrar los resultados
+# Mostrar los resultados==Premodelo
 print(model.summary())
 
 #Ajustes modelo en variables
 
-columns_to_select = [1, 2, 11, 16, 17, 38]
+columns_to_select = [1, 5, 10, 16, 33, 35]
 
 # Creamos el nuevo DataFrame df200
 df200 = df101.iloc[:, columns_to_select]
@@ -565,6 +578,25 @@ model = sm.OLS(Y, X).fit()
 
 # Mostrar los resultados
 print(model.summary())
+
+
+
+# Definir la variable dependiente y las variables independientes
+Y = df200["PREDIOS__RURALES_CON_CAMBIO_DE_PROPIETARIO_2016"]
+X = df200.drop(columns=["PREDIOS__RURALES_CON_CAMBIO_DE_PROPIETARIO_2016"])
+
+# Si la columna cero es el número del municipio y no es una variable independiente, elimínala
+# Descomenta la siguiente línea si quieres eliminar la columna cero
+# X = X.drop(X.columns[0], axis=1)
+
+# Nota: NO estamos añadiendo una constante (intercepto) al modelo esta vez
+
+# Ajustar el modelo
+model_without_intercept = sm.OLS(Y, X).fit()
+
+# Mostrar los resultados
+print(model_without_intercept.summary())
+
 
 #Pruebas
 import statsmodels.api as sm
