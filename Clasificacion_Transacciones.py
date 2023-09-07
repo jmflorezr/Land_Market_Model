@@ -27,11 +27,14 @@ from scipy.cluster.hierarchy import linkage, cut_tree, dendrogram
 df = pd.read_excel("C:\\Users\\JULIAN FLOREZ\\Downloads\\Variables\\Transacciones.xls")[["Predios", "Transacciones", "Categoria"]]
 
 # Eliminar los registros donde la columna "Categoria" sea igual a "Ciudades y aglomeraciones"
-df = df[df['Categoria'] != 'Ciudades y aglomeraciones']
+#df = df[df['Categoria'] != 'Ciudades y aglomeraciones']
+df = df[df['Transacciones'] <= 1640]
+
 df1 = df
 ##########
 # Determina el numero de clusters optimo
 df['Categoria'].replace({
+    'Ciudades y aglomeraciones': 0,
     'Intermedio': 1,
     'Rural disperso': 2,
     'Rural': 3
@@ -59,7 +62,13 @@ colors = plt.cm.rainbow(np.linspace(0, 1, len(range_n_clusters)))
 
 # Dibujo de las barras
 plt.figure()
-plt.bar(range_n_clusters, silhouette_avg_metrics, color=colors)
+bars = plt.bar(range_n_clusters, silhouette_avg_metrics, color=colors)
+
+# Añadir etiquetas de texto en la parte superior de cada barra
+for bar, silhouette_avg in zip(bars, silhouette_avg_metrics):
+    yval = bar.get_height()
+    plt.text(bar.get_x() + bar.get_width()/2.0, yval, round(silhouette_avg, 2), va='bottom')  # va: vertical alignment
+
 plt.xlabel('Number of Clusters')
 plt.ylabel('Average Silhouette Score')
 plt.title('Selection of Optimal Number of Clusters via Silhouette Method')
@@ -67,7 +76,7 @@ plt.colorbar(plt.cm.ScalarMappable(cmap="rainbow"))
 plt.show()
 
 # Use KMeans to cluster (or the number suggested by silhouette method)
-kmeans_model = KMeans(n_clusters=6)
+kmeans_model = KMeans(n_clusters=4)
 kmeans_model.fit(df_norm)
 df['Cluster'] = kmeans_model.labels_
 
@@ -88,7 +97,7 @@ plt.show()
 #################################
 
 # 2. Usar k-means para clasificar las Transacciones
-kmeans = KMeans(n_clusters=6, random_state=0).fit(df[['Transacciones']])
+kmeans = KMeans(n_clusters=4, random_state=0).fit(df[['Transacciones']])
 df['cluster'] = kmeans.labels_
 
 # 3. Asignar etiquetas a los clusters basados en los centroides
@@ -96,16 +105,14 @@ sorted_idx = np.argsort(kmeans.cluster_centers_.sum(axis=1))
 label_map = {
     sorted_idx[0]: 'muy bajo',
     sorted_idx[1]: 'bajo',
-    sorted_idx[2]: 'medio bajo',
-    sorted_idx[3]: 'medio',
-    sorted_idx[4]: 'medio alto',
-    sorted_idx[5]: 'alto'
+    sorted_idx[2]: 'medio',
+    sorted_idx[3]: 'alto'
 }
 df['clasificacion'] = df['cluster'].map(label_map)
 df.drop('cluster', axis=1, inplace=True)
 
 # 4. Visualizar la clasificación
-colors = {'muy bajo':'blue', 'bajo':'green', 'medio bajo':'magenta', 'medio':'red', 'medio alto':'cyan', 'alto':'orange'}
+colors = {'muy bajo':'blue', 'bajo':'green', 'medio':'red', 'alto':'orange'}
 plt.figure(figsize=(10, 6))
 
 # Dibuja cada punto de dato
@@ -134,6 +141,7 @@ class_df = pd.pivot_table(df, values='Transacciones', index='clasificacion',
 
 # Renombrar las columnas
 new_column_names = {
+    0 : 'Ciudades y aglomeraciones',
     1 : 'Intermedio',
     2 : 'Rural disperso',
     3 : 'Rural'
@@ -208,11 +216,20 @@ class_df.rename(columns=new_column_names, inplace=True)
 # Ruta del archivo
 ruta = "C:\\Users\\JULIAN FLOREZ\\Downloads\\Variables\\Tabla_Maestra.xlsx"
 
+
+
 df1 = pd.read_excel(ruta, engine='openpyxl', header=0)
+
 # Eliminar los registros donde la columna "Categoria" sea igual a "Ciudades y aglomeraciones"
-df11 = df1[df1['CategorIa_de_ruralidad'] != 'Ciudades y aglomeraciones']
+
+
+# df11 = df1[df1['CategorIa_de_ruralidad'] != 'Ciudades y aglomeraciones']
 #df11 = df1[df1['Categoria_de_ruralidad'] != 'Ciudades y aglomeraciones']
 # Ojo, al eliminar datos de Ciudades reduce la capacidad de explicacion del modelo
+# Iterar sobre las columnas 100 a 106 y aplicar la condición de filtrado
+for col in df1.columns[100:106]:
+    df11 = df1[df1[col] <= 1641]
+    
 df2 = df11.iloc[:, :112]
 
 # df2 = df1.iloc[:, :112]
@@ -561,7 +578,7 @@ print(model.summary())
 
 #Ajustes modelo en variables
 
-columns_to_select = [1, 5, 10, 16, 33, 35]
+columns_to_select = [1, 6, 11, 16, 27, 33, 35]
 
 # Creamos el nuevo DataFrame df200
 df200 = df101.iloc[:, columns_to_select]
