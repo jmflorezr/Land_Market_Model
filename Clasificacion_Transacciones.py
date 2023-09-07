@@ -210,10 +210,12 @@ ruta = "C:\\Users\\JULIAN FLOREZ\\Downloads\\Variables\\Tabla_Maestra.xlsx"
 
 df1 = pd.read_excel(ruta, engine='openpyxl', header=0)
 # Eliminar los registros donde la columna "Categoria" sea igual a "Ciudades y aglomeraciones"
-#df11 = df1[df1['CategorIa_de_ruralidad'] != 'Ciudades y aglomeraciones']
+df11 = df1[df1['CategorIa_de_ruralidad'] != 'Ciudades y aglomeraciones']
 #df11 = df1[df1['Categoria_de_ruralidad'] != 'Ciudades y aglomeraciones']
 # Ojo, al eliminar datos de Ciudades reduce la capacidad de explicacion del modelo
-df2 = df1.iloc[:, :112]
+df2 = df11.iloc[:, :112]
+
+# df2 = df1.iloc[:, :112]
 df2 = df2.drop(columns=['DEPARTAMENTO', 'MUNICIPIO', 'Gini_2020'])
 df3 = df2.dropna(subset=['PREDIOS__RURALES_CON_CAMBIO_DE_PROPIETARIO_2019'])
 
@@ -508,7 +510,7 @@ column_indices = [
 
 # Tomamos estas columnas del dataframe df1
 df100 = df1.iloc[:, column_indices]
-
+#df100 = df11.iloc[:, column_indices] # Sin Ciudades
 # # Eliminar las columnas especificadas del dataframe df100
 # df101 = df100.drop(columns=["CategorIa_de_ruralidad"])
 
@@ -975,22 +977,613 @@ for i in range(n_classes):
     plt.legend(loc="lower right")
     plt.show()
 
-
-
-
+#######################################################################################
 ###################Precios
 # 1. Leer el archivo de Excel y tomar las columnas "Predios" y "Transacciones"
+# Importar tabla de precios completa
+# Importar listado de municipios con precios y su respectivo año
 
-ruta = "C:\\Users\\JULIAN FLOREZ\\Downloads\\Variables\\Precio_Merc_Final_V2.xlsx"
-df1000 = pd.read_excel(ruta, engine='openpyxl', header=0)
-# Lista de columnas a borrar
-cols_to_drop_indices = [0, 1, 3, 9, 10, 11, 22, 23, 24, 27, 28, 29, 30, 37, 38, 39, 41, 45]
+ruta_actPx= "C:\\Users\\JULIAN FLOREZ\\Downloads\\Variables\\Actualizacion Precios.xlsx"
+hoja_munPx = 'Municipios DIVIPOLA'
+dfmunPx = pd.read_excel(ruta_actPx, sheet_name=hoja_munPx)
+print(dfmunPx.head())
 
-# Obtener los nombres de las columnas a partir de los índices
-cols_to_drop = df1000.columns[cols_to_drop_indices]
 
-# Borramos las columnas basadas en sus nombres
-df1001 = df1000.drop(columns=cols_to_drop)
 
-class_count = df1001["rango_precios"].value_counts()
-class_count
+# Importar factores de actualización de precios
+
+ruta_actPx= "C:\\Users\\JULIAN FLOREZ\\Downloads\\Variables\\Actualizacion Precios.xlsx"
+hoja_IPC = 'IPC'
+dfIPC = pd.read_excel(ruta_actPx, sheet_name=hoja_IPC)
+print(dfIPC.head())
+
+
+# Leer archivo de precios
+
+# Importar tabla de precios completa
+file_path = r"C:\\Users\\JULIAN FLOREZ\\Downloads\\Variables\\Precio_Merc_Final.txt"
+
+
+# Cargar el archivo validando las diferentes codificaciones con el separador ;
+
+encodings = ['utf-8', 'ISO-8859-1', 'cp1252']
+
+for encoding in encodings:
+    try:
+        dfPx = pd.read_csv(file_path, sep=';', encoding=encoding)
+        print("Importación exitosa con codificación:", encoding)
+        break
+    except UnicodeDecodeError:
+        print("Error al intentar con codificación:", encoding)
+    except pd.errors.EmptyDataError:
+        print("No se encontraron datos en el archivo.")
+
+# Identificar campos de la tabla de precios
+info_dfPx = dfPx.info()
+print(info_dfPx)
+
+# Identificar rangos de precios
+
+rangos_px = dfPx.groupby(['cod_precios', 'rango_precios']).size().reset_index(name='count')
+print(rangos_px)
+
+# Eliminar códigos de rangos no válidos
+
+cod_eliminar = [26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38]
+rangos_px_dep = rangos_px.drop(cod_eliminar)
+print(rangos_px_dep)
+
+#Homogenizar los valores de los rangos para su procesamiento posterior
+
+nuevo_valor = 'Mayor que 0 - hasta 1'
+fila_indice = 0
+columna_nombre = 'rango_precios'
+rangos_px_dep.at[fila_indice, columna_nombre] = nuevo_valor
+print(rangos_px_dep)
+
+nuevo_valor = 'Mayor que 1000 - hasta 1000'
+fila_indice = 25
+columna_nombre = 'rango_precios'
+rangos_px_dep.at[fila_indice, columna_nombre] = nuevo_valor
+print(rangos_px_dep)
+
+
+# Dividir la columna rango_precios en su valor mínimo y valor máximo
+
+rangos_px_dep[['rango_min', 'rango_max']] = rangos_px_dep['rango_precios'].str.split('-', expand=True)
+
+rangos_px_dep['rango_min'] = rangos_px_dep['rango_min'].str.replace(r'[^\d]', '', regex=True)
+rangos_px_dep['rango_max'] = rangos_px_dep['rango_max'].str.replace(r'[^\d]', '', regex=True)
+
+rangos_px_dep['rango_min'] = pd.to_numeric(rangos_px_dep['rango_min'])
+rangos_px_dep['rango_max'] = pd.to_numeric(rangos_px_dep['rango_max'])
+
+px_exp = 1000000
+
+rangos_px_dep['rango_min'] = rangos_px_dep['rango_min'] * px_exp
+rangos_px_dep['rango_max'] = rangos_px_dep['rango_max'] * px_exp
+
+print(rangos_px_dep)
+
+# definir clase clase de cada rango
+
+rangos_px_dep['clase'] = (rangos_px_dep['rango_min'] + rangos_px_dep['rango_max']) / 2
+rangos_px_dep['clase'] = pd.to_numeric(rangos_px_dep['clase'])
+print(rangos_px_dep)
+
+
+
+
+# Definir las categorías de rango por cada año hasta 2023 en un solo df
+
+repeticiones_rangos = []
+
+for año in dfIPC['Año']:
+    repeticiones_rangos.append(rangos_px_dep.assign(Año=año))
+
+px_actualizados = pd.concat(repeticiones_rangos, ignore_index=True)
+
+
+columnas_seleccionadas = ['Año', 'Factor2023']
+px_actualizados = pd.merge(px_actualizados, dfIPC[columnas_seleccionadas], left_on='Año', right_on='Año', how='left')
+
+print(px_actualizados)
+
+
+
+
+# Crear las nuevas columnas multiplicando por factor2023
+
+px_actualizados['clase2023'] = px_actualizados['clase'] * px_actualizados['Factor2023']
+
+print(px_actualizados)
+
+
+
+
+# Importar tabla de rangos
+
+ruta_actPx= "C:\\Users\\JULIAN FLOREZ\\Downloads\\Variables\\Actualizacion Precios.xlsx"
+hoja_RangosPx = 'RangosPx'
+dfRangosPx = pd.read_excel(ruta_actPx, sheet_name=hoja_RangosPx)
+print(dfRangosPx.head())
+
+
+
+# Encontrar el cod_precios correspondiente
+def encontrar_cod_precio(row):
+    filtro = (row['clase2023'] >= dfRangosPx['ValMin']) & (row['clase2023'] <= dfRangosPx['ValMax'])
+    cod_precio = dfRangosPx.loc[filtro, 'cod_precios'].values
+    return cod_precio[0] if len(cod_precio) > 0 else None
+
+px_actualizados['cod_precio_v'] = px_actualizados.apply(encontrar_cod_precio, axis=1)
+print(px_actualizados)
+
+
+
+# Actualizar tabla de px de 2023 con los valores de los rangos originales
+
+columnas_seleccionadas = ['cod_precios', 'rango_precios_v', 'clase_precios_v', 'ValMin', 'ValMax']
+px_actualizados = pd.merge(px_actualizados, dfRangosPx[columnas_seleccionadas], left_on='cod_precio_v', right_on='cod_precios', how='left')
+px_actualizados = px_actualizados.drop('cod_precios_y', axis=1)
+print(px_actualizados)
+
+
+path_to_save = "C:\\Users\\JULIAN FLOREZ\\Downloads\\Variables\\Resultados_Px_Actualizados.xlsx"
+px_actualizados.to_excel(path_to_save, index=False)
+
+
+
+# Eliminar filas de la tabla de px on códigos de px no procedentes
+
+
+indices_deseados  = [26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38]
+valores_identificados = rangos_px.loc[indices_deseados, 'rango_precios']
+
+dfPx_2023 = dfPx[~dfPx['rango_precios'].isin(valores_identificados)]
+print(dfPx_2023)
+
+
+
+
+# Complementar tabla de precios con año de precio y factores de actualización
+
+columnas_seleccionadas = ['CodMun', 'AñoPrecio']
+dfPx_2023 = pd.merge(dfPx_2023, dfmunPx[columnas_seleccionadas], left_on='cod_dane_mpio', right_on='CodMun', how='left')
+dfPx_2023.drop(columns=['CodMun'], inplace=True)
+print(dfPx_2023)
+
+
+# Actualizar tabla de px con los rangoas actualizados a 2023
+
+dfPx_2023['llave'] = dfPx_2023['AñoPrecio'].astype(str) + dfPx_2023['cod_precios']
+px_actualizados['llave'] = px_actualizados['Año'].astype(str) + px_actualizados['cod_precios_x']
+
+dfPx_2023 = dfPx_2023.merge(px_actualizados[['llave', 'cod_precio_v', 'rango_precios_v', 'clase_precios_v', 'ValMin', 'ValMax']], on='llave', how='left')
+
+dfPx_2023 = dfPx_2023.drop('llave', axis=1)
+
+print(dfPx_2023)
+
+
+# Graficas 
+
+
+rangos_px_corr = dfPx_2023.groupby(['cod_precios', 'rango_precios']).size().reset_index(name='count1')
+print(rangos_px)
+
+rangos_px_corr_año = dfPx_2023.groupby(['cod_precios', 'rango_precios', 'AñoPrecio']).size().reset_index(name='count2')
+print(rangos_px)
+
+rangos_px_2023 = dfPx_2023.groupby(['cod_precio_v', 'rango_precios_v']).size().reset_index(name='count3')
+print(rangos_px)
+
+
+
+dfRangosPx  = dfRangosPx.merge(rangos_px_corr, on='cod_precios', how='left')
+dfRangosPx = dfRangosPx.rename(columns={'count1': 'cant_PxCorr'})
+dfRangosPx = dfRangosPx.drop('rango_precios', axis=1)
+print(dfRangosPx)
+
+
+dfRangosPx = dfRangosPx.merge(rangos_px_2023, left_on='cod_precios', right_on='cod_precio_v', how='left')
+dfRangosPx = dfRangosPx.rename(columns={'count3': 'cant_Px2023'})
+dfRangosPx = dfRangosPx.drop('cod_precio_v', axis=1)
+dfRangosPx = dfRangosPx.drop('rango_precios_v_y', axis=1)
+print(dfRangosPx)
+
+dfRangosPx['cant_PxCorr'].fillna(0, inplace=True)
+dfRangosPx['cant_Px2023'].fillna(0, inplace=True)
+print(dfRangosPx)
+
+
+
+import matplotlib.pyplot as plt
+
+
+
+clase_precios_v = dfRangosPx['clase_precios_v']
+cant_PxCorr = dfRangosPx['cant_PxCorr']
+cant_Px2023 = dfRangosPx['cant_Px2023']
+
+clase_precios_v_millions = clase_precios_v / 1000000
+
+plt.figure(figsize=(9, 4))
+
+plt.scatter(cant_PxCorr, clase_precios_v_millions, label='Predios a Px Corrientes', color='blue', marker='o')
+plt.scatter(cant_Px2023, clase_precios_v_millions, label='Predios a Px 2023', color='red', marker='x')
+
+plt.xlabel('Cantidad de Predios')
+plt.ylabel('Valor Promedio de Predios (millones)')
+plt.title('Relación entre Cantidad de Predios y Valor Promedio')
+
+plt.legend()
+
+plt.grid(True)
+plt.show()
+
+
+import numpy as np
+
+
+clase_precios_v = dfRangosPx['clase_precios_v']
+cant_PxCorr = dfRangosPx['cant_PxCorr']
+cant_Px2023 = dfRangosPx['cant_Px2023']
+
+clase_precios_v_millions = clase_precios_v / 1000000
+
+ind = np.arange(len(clase_precios_v))
+
+width = 0.35
+
+fig, ax = plt.subplots(figsize=(9, 4))
+
+rects1 = ax.bar(ind - width/2, cant_PxCorr, width, label='Predios a Px Corrientes')
+rects2 = ax.bar(ind + width/2, cant_Px2023, width, label='Predios a Px de 2023')
+
+ax.set_xlabel('Valor Promedio de Predios (millones)')
+ax.set_ylabel('Cantidad de Predios')
+ax.set_title('Cantidad de Predios a Precios Corrientes y Precios de 2023 por Valor Promedio')
+ax.set_xticks(ind)
+ax.set_xticklabels(clase_precios_v_millions, rotation=45, ha="right")
+
+ax.legend()
+
+plt.show()
+
+
+# cols_to_drop_indices = [4, 3, 7, 8, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 23, 25, 26, 33, 34, 35, 36, 40, 41, 42, 48, 49, 51]
+
+# # Obtener los nombres de las columnas a partir de los índices
+# cols_to_drop = dfPx_2023.columns[cols_to_drop_indices]
+
+# # Borramos las columnas basadas en sus nombres
+# df5000 = dfPx_2023.drop(columns=cols_to_drop)
+
+column_indices = [
+    4, 7, 8, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 23, 25, 26, 33, 34, 35, 36, 40, 41, 42, 48, 49, 51
+]
+# Tomamos estas columnas del dataframe df1
+df5000 = dfPx_2023.iloc[:, column_indices]
+
+# Filtrar valores None y NaN antes de ordenar
+filtered_values = [x for x in df5000['rango_precios_v'].dropna().unique() if x is not None]
+
+# Crear un mapeo de valores únicos a números enteros empezando desde 0
+value_mapping = {value: index for index, value in enumerate(sorted(filtered_values))}
+
+# Aplicar el mapeo a la columna 'rango_precios_v' para crear una nueva columna de valores numéricos
+df5000['rango_precios_v_numerical'] = df5000['rango_precios_v'].map(value_mapping)
+
+# Mostrar el mapeo de valores y el DataFrame actualizado
+print("Mapping of values:", value_mapping)
+
+df5000 = df5000.drop(columns=['rango_precios_v'])
+
+
+columnas_df1 = df1.columns
+print(columnas_df1)
+
+column_indices = [
+    0, 5, 12, 18, 24, 30, 36, 48, 54, 60, 66, 72, 78, 84, 90, 96, 102,  
+    112, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 
+    131, 132, 133, 134, 135, 139, 108
+]
+
+
+# Tomamos estas columnas del dataframe df1
+df1000 = df1.iloc[:, column_indices]
+
+df6000 = pd.merge(df5000, df1000, left_on='cod_dane_mpio', right_on='COD_MPIO', how='left')
+
+df6000 = pd.get_dummies(df6000, columns = df6000.select_dtypes(exclude=['int64','float64']).columns, drop_first = True)
+pd.options.display.max_columns = None
+
+df6000.dropna(inplace=True)
+df6000 = df6000.drop(columns=['cod_dane_mpio', 'COD_MPIO'])
+
+
+y = df6000['rango_precios_v_numerical']
+X = df6000.drop(columns = 'rango_precios_v_numerical')
+
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
+import seaborn as sns
+sns.set(style="darkgrid")
+from time import time
+
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.neural_network import MLPClassifier
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import make_scorer
+from sklearn.metrics import fbeta_score
+from sklearn.metrics import accuracy_score
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.impute import SimpleImputer
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import roc_curve, auc, roc_auc_score, classification_report, confusion_matrix, make_scorer
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+
+import warnings
+warnings.filterwarnings("ignore")
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import plot_confusion_matrix
+from sklearn.metrics import classification_report
+from sklearn.model_selection import GridSearchCV
+
+
+# Definimos la semilla para el generador de número aleatorios
+np.random.seed(810603)
+
+# Dividimos los datos aleatoriamente en 80% para entrenamiento y 20% para prueba 
+X_train, X_test, y_train, y_test = train_test_split(X,y, test_size = 0.2, random_state=25)
+# IMPORTANTE: Las muestras están estratificadas, i.e., la proporción de clientes retenidos y no-retenidos es la misma en ambos
+
+# Chequeemos los resultados
+print(X_train.shape)
+print(X_test.shape)
+print(y_train.shape)
+print(y_test.shape)
+
+#1.0 Arboles Aleatorios
+# Building  Random Forest Classifier
+from sklearn.ensemble import RandomForestClassifier
+rfc = RandomForestClassifier(criterion = 'entropy', random_state = 90)
+rfc.fit(X_train, y_train)
+
+# Evaluating on Training set
+rfc_pred_train = rfc.predict(X_train)
+
+
+from sklearn.tree import DecisionTreeClassifier
+dt = DecisionTreeClassifier(criterion = 'entropy', random_state = 30)
+dt.fit(X_train, y_train)
+dt_pred_train = dt.predict(X_train)
+
+feature_importance=pd.DataFrame({
+    'rfc':rfc.feature_importances_,
+    'dt':dt.feature_importances_
+},index=df6000.drop(columns=['rango_precios_v_numerical']).columns)
+feature_importance.sort_values(by='rfc',ascending=True,inplace=True)
+
+index = np.arange(len(feature_importance))
+fig, ax = plt.subplots(figsize=(18,38))
+rfc_feature=ax.barh(index,feature_importance['rfc'],0.1,color='purple',label='Random Forest')
+dt_feature=ax.barh(index+0.4,feature_importance['dt'],0.1,color='lightgreen',label='Decision Tree')
+ax.set(yticks=index+0.4,yticklabels=feature_importance.index)
+
+ax.legend()
+plt.show()
+
+# Ordenar el DataFrame por la importancia de las características del modelo de Random Forest en orden descendente
+feature_importance.sort_values(by='rfc', ascending=False, inplace=True)
+
+# Seleccionar las 20 características más importantes
+top_features = feature_importance.head(50)
+
+
+# Convertir el índice del DataFrame top_20_features en una lista
+top_features_list = top_features.index.tolist()
+
+# Añadir la columna 'clase' a la lista de columnas a extraer
+top_features_list.append('rango_precios_v_numerical')
+
+# Extraer las columnas relevantes del DataFrame df200 para crear df201
+df6001 = df6000[top_features_list]
+
+# Obtener los nombres de las columnas que tienen tipo de datos 'uint8'
+uint8_columns = df6001.select_dtypes(include=['uint8']).columns
+
+# Cambiar el tipo de datos de estas columnas a 'int64'
+for column in uint8_columns:
+    df6001[column] = df6001[column].astype('int64')
+
+
+# Contar la frecuencia de cada valor único en la columna 'clase'
+value_counts = df6001['rango_precios_v_numerical'].value_counts()
+
+# Mostrar las frecuencias
+print(value_counts)
+df6001 = df6001.drop(df6001.columns[39], axis=1)
+
+
+####################
+from sklearn.model_selection import StratifiedShuffleSplit
+
+# Simulando un DataFrame muy grande
+# Reemplazar con tu DataFrame real
+# df_huge = pd.read_csv('your_large_file.csv')
+
+
+
+# Inicializar StratifiedShuffleSplit
+sss = StratifiedShuffleSplit(n_splits=1, test_size=0.5, random_state=0)
+
+# Obtener los índices para los dos subconjuntos
+for train_index, test_index in sss.split(df6001, df6001['rango_precios_v_numerical']):
+    df_part1 = df6001.iloc[train_index]
+    df_part2 = df6001.iloc[test_index]
+
+# Ahora df_part1 y df_part2 son dos subconjuntos del DataFrame original con una distribución similar de clases
+# Contar la frecuencia de cada valor único en la columna 'clase'
+value_counts = df_part2['rango_precios_v_numerical'].value_counts()
+
+# Mostrar las frecuencias
+print(value_counts)
+
+
+####################
+# Creamos el nuevo DataFrame df201
+Bases_Unit_SVM = df_part1
+y1 = Bases_Unit_SVM['rango_precios_v_numerical']
+X1 = Bases_Unit_SVM.drop(columns = 'rango_precios_v_numerical')
+
+
+# Dividimos los datos aleatoriamente en 80% para entrenamiento y 20% para prueba 
+X_train, X_test, y_train, y_test = train_test_split(X1,y1, test_size = 0.3, random_state=25)
+# IMPORTANTE: Las muestras están estratificadas, i.e., la proporción de clientes retenidos y no-retenidos es la misma en ambos
+
+
+
+# from imblearn.under_sampling import RandomUnderSampler
+
+# # Inicializar RandomUnderSampler
+# rus = RandomUnderSampler(random_state=101)
+# # Ajustar y aplicar el submuestreo
+# X_undersample, y_undersample = rus.fit_resample(X_train, y_train)
+# # Actualizar X_train y y_train con los datos submuestreados
+# X_train = X_undersample
+# y_train = y_undersample
+from imblearn.over_sampling import SMOTE
+smote = SMOTE(random_state = 101)
+X_oversample, y_oversample = smote.fit_resample(X_train, y_train)
+X_train = X_oversample
+y_train = y_oversample
+
+
+# Contar las ocurrencias de cada valor único en la Serie
+conteo_valores = y_train.value_counts()
+# Mostrar el conteo de valores
+print(conteo_valores)
+
+
+# Metricas de los modelos
+
+# curva ROC
+def plot_roc(y_test, y_pred):
+    fpr, tpr, thresholds = roc_curve(y_test, y_pred, pos_label=1, drop_intermediate = False)
+    roc_auc = auc(fpr, tpr)
+    plt.figure()
+    lw = 2
+    plt.plot(fpr, tpr, color='darkorange',
+             lw=lw, label='ROC curve (AUC = %0.2f)' % roc_auc)
+    plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+    plt.xlim([-0.001, 1.001])
+    plt.ylim([-0.001, 1.001])
+    plt.xlabel('1-Specificity (False Negative Rate)')
+    plt.ylabel('Sensitivity (True Positive Rate)')
+    plt.title('ROC curve')
+    plt.legend(loc="lower right")
+    plt.show()
+
+# Matriz de confusión en el formato: cm[0,0], cm[0,1], cm[1,0], cm[1,1]: tn, fp, fn, tp
+
+# Sensitivity
+def custom_sensitivity_score(y_test, y_pred):
+    cm = confusion_matrix(y_test, y_pred)
+    tn, fp, fn, tp = cm[0][0], cm[0][1], cm[1][0], cm[1][1]
+    return (tp/(tp+fn))
+
+# Specificity
+def custom_specificity_score(y_test, y_pred):
+    cm = confusion_matrix(y_test, y_pred)
+    tn, fp, fn, tp = cm[0][0], cm[0][1], cm[1][0], cm[1][1]
+    return (tn/(tn+fp))
+
+# Positive Predictive Value
+def custom_ppv_score(y_test, y_pred):
+    cm = confusion_matrix(y_test, y_pred)
+    tn, fp, fn, tp = cm[0][0], cm[0][1], cm[1][0], cm[1][1]
+    return (tp/(tp+fp))
+
+# Negative Predictive Value
+def custom_npv_score(y_test, y_pred):
+    cm = confusion_matrix(y_test, y_pred)
+    tn, fp, fn, tp = cm[0][0], cm[0][1], cm[1][0], cm[1][1]
+    return (tn/(tn+fn))
+
+# Accuracy
+def custom_accuracy_score(y_test, y_pred):
+    cm = confusion_matrix(y_test, y_pred)
+    tn, fp, fn, tp = cm[0][0], cm[0][1], cm[1][0], cm[1][1]
+    return ((tn+tp)/(tn+tp+fn+fp))
+
+###Redes Neuronales
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+from tensorflow.keras.wrappers.scikit_learn import KerasClassifier
+import numpy as np
+np.random.seed(77300)
+
+from sklearn import svm
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+
+from tensorflow import keras
+from tensorflow.keras import layers
+import tensorflow as tf
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+from keras.wrappers.scikit_learn import KerasClassifier
+
+def crear_modelo():
+    model = keras.Sequential([
+        layers.Dense(51,  activation="relu", name="capa-1-oculta-39-neuronas"),
+        layers.Dropout(0.3),
+        layers.Dense(15, activation="relu", name="capa-2-oculta-15-neuronas"),
+        layers.Dropout(0.2),
+        layers.Dense(27, activation='softmax', name="capa-salida"),  # 6 neuronas en la capa de salida, una para cada clase
+    ])
+    adam = tf.keras.optimizers.Adam()
+    model.compile(loss='sparse_categorical_crossentropy',  # cambiar a categorical_crossentropy
+                  optimizer=adam, 
+                  metrics=['accuracy'])  # se mantiene accuracy como métrica
+    return model
+
+nn_estimators = []
+nn_estimators.append(('estandarizar', StandardScaler()))  # estandarizar los datos
+nn_estimators.append(('multilayer-perceptron', KerasClassifier(build_fn=crear_modelo, 
+                                                               epochs=100, 
+                                                               batch_size=128, 
+                                                               validation_split=0.2)))  # compilar el modelo
+
+# Definimos el modelo de Red Neuronal en TensorFlow y lo llamamos Classifier_TF_NN
+Classifier_TF_NN = Pipeline(nn_estimators, verbose=False)
+
+# Entrenamos el modelo Classifier_TF_NN con los datos de entrenamiento
+Classifier_TF_NN.fit(X_train, y_train)
+
+# Usamos el modelo entrenado para predecir sobre los datos de prueba
+y_pred_prob = Classifier_TF_NN.predict_proba(X_test)  # probabilidades
+y_pred = Classifier_TF_NN.predict(X_test)  # clasificación
+
+
+
+# Revisamos las métricas del modelo
+print('Métricas del modelo de Red Neuronal con Tensor Flow: \n')
+cm = np.transpose(confusion_matrix(y_test, y_pred))
+print("Matriz de confusión: \n" + str(cm))
+print("                                   Accuracy: " + str(custom_accuracy_score(y_test, y_pred)))
+print("                       SENSITIVITY (RECALL): " + str(custom_sensitivity_score(y_test, y_pred)))
+print("                     SPECIFICITY (FALL-OUT): " + str(custom_specificity_score(y_test, y_pred)))
+print("      POSITIVE PREDICTIVE VALUE (PRECISION): " + str(custom_ppv_score(y_test, y_pred)))
+print("                  NEGATIVE PREDICTIVE VALUE: " + str(custom_npv_score(y_test, y_pred)))
+
+#Accuracy: 0.8923652105470288
