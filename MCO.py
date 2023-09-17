@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Última actualización lunes 11 Sep 21:38 2023
+Última actualización: 17 Sep 2023 08:25 AM
 @autor: JULIAN FLOREZ
 @colaborador: GUSTAVO BOBADILLA
 """
@@ -21,6 +21,16 @@ df1 = pd.read_excel(ruta, sheet_name=nombre_de_hoja, engine='openpyxl', header=0
 columnas_df1 = df1.columns
 df1.info()
 
+#ruta = "C:\\Users\\User\\OneDrive - Unidad de Planificación Rural Agropecuaria - UPRA\\1 Agosto\\Modelos\\MunicipiosExcluidos.xlsx"
+#nombre_de_hoja = 'MunicipiosExcluidos'
+#MunicipiosExcluidos = pd.read_excel(ruta, sheet_name=nombre_de_hoja, engine='openpyxl', header=0)
+
+#codigos_excluidos = MunicipiosExcluidos['COD_MUN_EXCL'].tolist()
+#mascara = ~df1['COD_MPIO'].isin(codigos_excluidos)
+#df1 = df1[mascara]
+
+
+
 columnas_a_eliminar = ['COD_MPIO', 'DEPARTAMENTO', 'MUNICIPIO', 'CategorIa_de_ruralidad',
                        'IRV_2016', 
                        'TASA_CREC_AR_CULT_PERM_2016',
@@ -37,10 +47,14 @@ df101.info()
 
 # Eliminar las filas con valores nan en la columna especificada
 
+df101['Pot2016'] = df101['Pot2016'].fillna(0)
 df101 = df101.dropna(subset=["PREDIOS__RURALES_CON_CAMBIO_DE_PROPIETARIO_2016"])
 df101 = df101.dropna(subset=["CTransi2016"])
 df101 = df101.dropna(subset=["Indice_de_rendimiento_PromNal_MáxNal"])
 df101 = df101.dropna(subset=["CPerm%2016"])
+
+
+
 
 
 #Matrix de correlacion 

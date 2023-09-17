@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Última actualización lunes 11 Sep 20:39 2023
+Última actualización: 17 Sep 2023 08:35 AM
 @autor: JULIAN FLOREZ
 @colaborador: GUSTAVO BOBADILLA
 """
@@ -14,11 +14,25 @@ import pandas as pd
 ruta = "C:\\Users\\User\\OneDrive - Unidad de Planificación Rural Agropecuaria - UPRA\\1 Agosto\\Modelos\\Tabla_Maestra.xlsx"
 nombre_de_hoja = 'DP'
 df1 = pd.read_excel(ruta, sheet_name=nombre_de_hoja, engine='openpyxl', header=0)
+
 # Eliminar los registros donde la columna "Categoria" sea igual a "Ciudades y aglomeraciones"
 #df11 = df1[df1['CategorIa_de_ruralidad'] != 'Ciudades y aglomeraciones']
 #df11 = df1[df1['Categoria_de_ruralidad'] != 'Ciudades y aglomeraciones']
 # Ojo, al eliminar datos de Ciudades reduce la capacidad de explicacion del modelo
+# Iterar sobre las columnas 100 a 106 y aplicar la condición de filtrado
+#for col in df1.columns[4:9]:
+#    df1 = df1[df1[col] <= 1641]
 
+#ruta = "C:\\Users\\User\\OneDrive - Unidad de Planificación Rural Agropecuaria - UPRA\\1 Agosto\\Modelos\\MunicipiosExcluidos.xlsx"
+#nombre_de_hoja = 'MunicipiosExcluidos'
+#MunicipiosExcluidos = pd.read_excel(ruta, sheet_name=nombre_de_hoja, engine='openpyxl', header=0)
+
+
+# Obtén una lista de los valores de COD_MUN_EXCL en MunicipiosExcluidos
+#codigos_excluidos = MunicipiosExcluidos['COD_MUN_EXCL'].tolist()
+#mascara = ~df1['COD_MPIO'].isin(codigos_excluidos)
+#df1 = df1[mascara]
+    
 df2 = df1.drop(columns=['DEPARTAMENTO', 'MUNICIPIO', 'CategorIa_de_ruralidad'])
 df3 = df2.dropna(subset=['PREDIOS__RURALES_CON_CAMBIO_DE_PROPIETARIO_2019'])
 
