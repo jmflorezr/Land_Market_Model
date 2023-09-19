@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Última actualización: 17 Sep 2023 08:35 AM
+Última actualización: 18 Sep 2023 06:12 PM
 @autor: JULIAN FLOREZ
 @colaborador: GUSTAVO BOBADILLA
 """
@@ -220,6 +220,8 @@ df_panel = (df_predios_cambio.merge(df_gini, on=['COD_MPIO', 'Year'])
 
 df_panel = df_panel.sort_values(by=['COD_MPIO', 'Year'])
 df_panel['Transitorios'] = df_panel['Transitorios'].fillna(0)
+df_panel['pot'] = df_panel['pot'].fillna(0)
+df_panel['Permanentes'] = df_panel['Permanentes'].fillna(0)
 df_panel['CPerm'] = df_panel['CPerm'].fillna(0)
 df_panel['CTransi'] = df_panel['CTransi'].fillna(0)
 df_panel['Victimas'] = df_panel['Victimas'].fillna(0)

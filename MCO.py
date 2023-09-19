@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Última actualización: 17 Sep 2023 08:25 AM
+Última actualización: 18 Sep 2023 08:59 PM
 @autor: JULIAN FLOREZ
 @colaborador: GUSTAVO BOBADILLA
 """
@@ -34,7 +34,8 @@ df1.info()
 columnas_a_eliminar = ['COD_MPIO', 'DEPARTAMENTO', 'MUNICIPIO', 'CategorIa_de_ruralidad',
                        'IRV_2016', 
                        'TASA_CREC_AR_CULT_PERM_2016',
-                       'TASA_CREC_AR_CULT_TRANSIT_2016']
+                       'TASA_CREC_AR_CULT_TRANSIT_2016'
+                       ]
 
 # Tomamos estas columnas del dataframe df1
 df100 = df1.drop(columns=columnas_a_eliminar)
@@ -47,15 +48,17 @@ df101.info()
 
 # Eliminar las filas con valores nan en la columna especificada
 
-df101['Pot2016'] = df101['Pot2016'].fillna(0)
 df101 = df101.dropna(subset=["PREDIOS__RURALES_CON_CAMBIO_DE_PROPIETARIO_2016"])
-df101 = df101.dropna(subset=["CTransi2016"])
+df101['Area_Permanentes_2016'] = df101['Area_Permanentes_2016'].fillna(0)
+df101['Area_Transitorios_2016'] = df101['Area_Transitorios_2016'].fillna(0)
+df101["CPerm%2016"] = df101["CPerm%2016"].fillna(0)
+df101["CTransi2016"] = df101["CTransi2016"].fillna(0)
 df101 = df101.dropna(subset=["Indice_de_rendimiento_PromNal_MáxNal"])
-df101 = df101.dropna(subset=["CPerm%2016"])
+df101['Pot2016'] = df101['Pot2016'].fillna(0)
+#Idf101["TASA_CREC_AR_CULT_PERM_2016"] = df101["TASA_CREC_AR_CULT_PERM_2016"].fillna(0)
+#df101["TASA_CREC_AR_CULT_TRANSIT_2016"] = df101["TASA_CREC_AR_CULT_TRANSIT_2016"].fillna(0)
 
-
-
-
+df101.info()
 
 #Matrix de correlacion 
 import pandas as pd
@@ -99,7 +102,7 @@ columnas_a_seleccionar = [0, 2, 3,
                           15, 17,
                           20, 
                           31, 
-                          40, 41]
+                          39, 40]
 
 # Creamos el nuevo DataFrame df200
 df200 = df101.iloc[:, columnas_a_seleccionar]
