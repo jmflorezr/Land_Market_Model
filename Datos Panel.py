@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Última actualización: 18 Sep 2023 06:12 PM
+Última actualización: 21 Sep 2023 05:32 PM
 @autor: JULIAN FLOREZ
 @colaborador: GUSTAVO BOBADILLA
 """
@@ -228,6 +228,10 @@ df_panel['Victimas'] = df_panel['Victimas'].fillna(0)
 df_panel['IRV'] = df_panel['IRV'].fillna(0)
 df_panel['TASA_CREC_AR_CULT_PERM'] = df_panel['TASA_CREC_AR_CULT_PERM'].fillna(0)
 df_panel['TASA_CREC_AR_CULT_TRANSIT'] = df_panel['TASA_CREC_AR_CULT_TRANSIT'].fillna(0)
+df_panel = df_panel.dropna(subset=["IND_GOB_ABIERTO"])
+df_panel['PORC_VR_AGR_ACT_PRIM'] = df_panel['PORC_VR_AGR_ACT_PRIM'].fillna(0)
+df_panel = df_panel.dropna(subset=["Gini"])
+
 
 
 #Análisis descriptivo básico
@@ -365,7 +369,8 @@ from statsmodels.regression.mixed_linear_model import MixedLM
 df_panel = df_panel.reset_index() #Mirar cuando reset los indices- generar de nuevo el dataframe
 dependent = df_panel['Predios_Cambio']
 independent = df_panel[['Gini', 'PRurales', 'IRV', 'PoblCabecera',
-                        'act_secundaria', 'act_terciaria', 'pot']]
+                        'act_secundaria', 'act_terciaria', 'pot',
+                        'COLOCACIONES']]
 independent = sm.add_constant(independent)
 df_panel.reset_index(drop=False, inplace=True)
 
@@ -387,12 +392,12 @@ from scipy import stats
 df_panel = df_panel.set_index(['COD_MPIO', 'Year'])
 
 # Efectos Fijos
-formula_fe = 'Predios_Cambio ~ 1 + Gini + PRurales + IRV + PoblCabecera + act_secundaria + act_terciaria + pot + EntityEffects'
+formula_fe = 'Predios_Cambio ~ 1 + Gini + PRurales + IRV + PoblCabecera + act_secundaria + act_terciaria + pot + COLOCACIONES + EntityEffects'
 model_fe = PanelOLS.from_formula(formula_fe, data=df_panel)
 results_fe = model_fe.fit()
 
 # Efectos Aleatorios
-formula_re = 'Predios_Cambio ~ 1 + Gini + PRurales + IRV + PoblCabecera + act_secundaria + act_terciaria + pot'
+formula_re = 'Predios_Cambio ~ 1 + Gini + PRurales + IRV + PoblCabecera + act_secundaria + act_terciaria + pot + COLOCACIONES'
 model_re = RandomEffects.from_formula(formula_re, data=df_panel)
 results_re = model_re.fit()
 

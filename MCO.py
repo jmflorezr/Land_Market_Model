@@ -33,7 +33,7 @@ df1.info()
 
 columnas_a_eliminar = ['COD_MPIO', 'DEPARTAMENTO', 'MUNICIPIO', 'CategorIa_de_ruralidad',
                        'IRV_2016', 
-                       'TASA_CREC_AR_CULT_PERM_2016',
+                      'TASA_CREC_AR_CULT_PERM_2016',
                        'TASA_CREC_AR_CULT_TRANSIT_2016'
                        ]
 
@@ -53,8 +53,8 @@ df101['Area_Permanentes_2016'] = df101['Area_Permanentes_2016'].fillna(0)
 df101['Area_Transitorios_2016'] = df101['Area_Transitorios_2016'].fillna(0)
 df101["CPerm%2016"] = df101["CPerm%2016"].fillna(0)
 df101["CTransi2016"] = df101["CTransi2016"].fillna(0)
-df101 = df101.dropna(subset=["Indice_de_rendimiento_PromNal_MáxNal"])
 df101['Pot2016'] = df101['Pot2016'].fillna(0)
+df101 = df101.dropna(subset=["Indice_de_rendimiento_PromNal_MáxNal"])
 #Idf101["TASA_CREC_AR_CULT_PERM_2016"] = df101["TASA_CREC_AR_CULT_PERM_2016"].fillna(0)
 #df101["TASA_CREC_AR_CULT_TRANSIT_2016"] = df101["TASA_CREC_AR_CULT_TRANSIT_2016"].fillna(0)
 
@@ -98,11 +98,10 @@ print(model.summary())
 
 #Ajustes modelo en variables
 
-columnas_a_seleccionar = [0, 2, 3,  
-                          15, 17,
-                          20, 
-                          31, 
-                          39, 40]
+columnas_a_seleccionar = [0, 2, 8, 
+                           15, 17,
+                          20, 29,
+                          34, 35]
 
 # Creamos el nuevo DataFrame df200
 df200 = df101.iloc[:, columnas_a_seleccionar]
