@@ -11,7 +11,7 @@ import pandas as pd
 
 # 1. Leer el archivo de Excel tabla Maestra
 # Ruta del archivo
-ruta = "C:\\Users\\User\\OneDrive - Unidad de Planificación Rural Agropecuaria - UPRA\\3 Octubre\\Información\\Tabla_Maestra_N.xlsx"
+ruta = "C:\\Users\\JULIAN FLOREZ\\Downloads\\Variables\\Copia de 20231116_DTR_TABLA_MAESTRA_INF_REGISTRAL.xlsx"
 nombre_de_hoja = 'DP'
 df1 = pd.read_excel(ruta, sheet_name=nombre_de_hoja, engine='openpyxl', header=0)
 
@@ -357,6 +357,7 @@ results = model.fit()
 print(results)
 
 
+
 ###############################
 ##Modelo Inicial, Revivar R2 0.1621
 ###############################
@@ -420,3 +421,4 @@ if p_value < 0.05:
     print("La prueba de Hausman es significativa: prefiera el modelo de efectos fijos.")
 else:
     print("La prueba de Hausman no es significativa: prefiera el modelo de efectos aleatorios.")
+
